@@ -72,3 +72,32 @@ El texto original queda guardado en `notesRaw` por las dudas.
 
 Todo se guarda en el `localStorage` del navegador (clave `feedplanner.v2`). Las imágenes se reescalan a 900px.
 **Exportar** baja un `.json` de respaldo; **Importar** lo restaura o lo pasa a otra máquina.
+
+## Sincronizar entre dispositivos
+
+La app se puede conectar a una base de datos gratis de **Supabase** para que el feed sea el mismo
+en la compu y en el teléfono. Sin conectar, funciona igual pero cada dispositivo guarda lo suyo.
+
+**Una vez, en Supabase:**
+
+1. Crear una cuenta en [supabase.com](https://supabase.com) y un proyecto nuevo (plan Free).
+2. En **SQL Editor → New query**, pegar el contenido de [`supabase.sql`](supabase.sql) y darle *Run*.
+3. En **Project Settings → API**, copiar **Project URL** y la clave **anon public**.
+
+**En cada dispositivo:** abrir la app → botón **Local** (arriba a la derecha) → pegar la URL, la clave
+y el nombre del feed (`dani`, el mismo en todos) → *Conectar*.
+
+Desde ahí: cada cambio se sube solo (1,2 s después de tocar algo), y la app se fija si hay novedades
+cada 15 segundos y cada vez que volvés a la pestaña. El punto del botón muestra el estado —
+verde en la nube, azul guardando, rojo sin conexión. Mientras tenés una ficha abierta no se pisa nada.
+
+Las claves se guardan sólo en el `localStorage` de cada dispositivo: **no se suben a GitHub**
+ni viajan en el `.json` exportado.
+
+## Publicar
+
+El repo es público y se sirve con GitHub Pages desde la raíz: `index.html` y `assets/` con rutas
+relativas, así que anda igual en un subdirectorio (`usuario.github.io/feed-planner/`).
+
+`dist/` está ignorado: es la versión de un solo archivo (todo embebido en base64) que genera
+`node .claude/inline.mjs`, para mandar por WhatsApp o usar sin internet.
