@@ -2,7 +2,8 @@
 
 Grilla visual para planificar el feed de @danidemario. Una sola página, sin build ni dependencias.
 
-**Abrir:** doble click en `index.html` (o `node .claude/serve.mjs` → http://localhost:5178).
+**En línea:** https://uborits-gif.github.io/feed-planner/ 
+**Local:** doble click en `index.html` (o `node .claude/serve.mjs` → http://localhost:5178).
 
 ## Pensado para ella
 
