@@ -646,6 +646,7 @@ textarea.prompt{min-height:70px;font-size:11.5px;line-height:1.45;color:var(--gr
     </div>
     <div class="hoja-f">
       <button class="b pri" id="sConectar">Conectar</button>
+      <button class="b sm" id="sLink">Copiar link para otro dispositivo</button>
       <button class="b sm" id="sBajar">Traer de la nube</button>
       <button class="b sm" id="sSubir">Subir lo de acá</button>
       <div class="crece"></div>
@@ -934,7 +935,7 @@ function guardar(){
    ========================================================= */
 const KEY_NUBE = 'feedplanner.nube';
 let nube = {url:'', key:'', id:'dani'};
-let aplicandoRemoto = false, empujeT = null, ultimoVisto = '', sondeoT = null;
+let aplicandoRemoto = false, empujeT = null, ultimoVisto = '', sondeoT = null, primerEnlace = true;
 
 function leerConfigNube(){
   try{ Object.assign(nube, JSON.parse(localStorage.getItem(KEY_NUBE) || '{}')) }catch(e){}
@@ -1003,14 +1004,43 @@ function arrancarSondeo(){
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) bajarSiHayNuevo() });
 window.addEventListener('online', ()=> bajarSiHayNuevo());
 
+/* Configuración por link: abrir la app con #sync=<base64> la deja lista.
+   El fragmento no viaja al servidor y se borra de la barra apenas se guarda. */
+function configDesdeLink(){
+  const m = /^#sync=(.+)$/.exec(location.hash);
+  if(!m) return false;
+  let d;
+  try{ d = JSON.parse(atob(decodeURIComponent(m[1]))) }
+  catch(e){ console.warn('link de sync ilegible:', e.message); return false }
+  if(!d || !d.url || !d.key) return false;
+  nube = {url: String(d.url).replace(/\/+$/,''), key: String(d.key), id: String(d.id || 'dani')};
+  guardarConfigNube();
+  // sacar la clave de la barra de direcciones (y del historial)
+  try{ history.replaceState(null, '', location.pathname + location.search) }catch(e){}
+  return true;
+}
+function linkDeConfig(){
+  return location.origin + location.pathname + '#sync=' +
+    encodeURIComponent(btoa(JSON.stringify({url:nube.url, key:nube.key, id:nube.id})));
+}
+
 async function iniciarNube(){
-  leerConfigNube();
   if(!nubeActiva()){ estadoSync('', 'Local'); return }
   estadoSync('yendo', 'Conectando');
   try{
     const fila = await traerNube();
     if(!fila){ await subirNube(); aviso('Feed subido a la nube') }       // primera vez
+    else if(primerEnlace && JSON.stringify(fila.datos) !== JSON.stringify(state)){
+      // al conectar un dispositivo nuevo: nunca pisar sin preguntar
+      const n = (fila.datos.slots || []).filter(s=>s && !s.empty).length;
+      const traer = confirm(
+        `En la nube ya hay un feed guardado (${n} contenidos, ${fechaCorta(fila.actualizado.slice(0,10))}).\n\n` +
+        `Aceptar: traer el de la nube a este dispositivo.\n` +
+        `Cancelar: subir lo que tenés acá y pisar el de la nube.`);
+      if(traer) aplicar(fila.datos, fila.actualizado); else await subirNube();
+    }
     else aplicar(fila.datos, fila.actualizado);
+    primerEnlace = false;
     estadoSync('ok', 'En la nube');
   }catch(e){
     estadoSync('mal', 'Sin conexión');
@@ -1039,7 +1069,13 @@ document.getElementById('sConectar').onclick = async ()=>{
   if(!nube.url || !nube.key){ aviso('Faltan la URL y la clave'); return }
   guardarConfigNube();
   modalSync.hidden = true;
+  primerEnlace = true;
   await iniciarNube();
+};
+document.getElementById('sLink').onclick = async ()=>{
+  if(!nubeActiva()){ aviso('Primero conectá'); return }
+  try{ await navigator.clipboard.writeText(linkDeConfig()); aviso('Link copiado — abrilo en el otro dispositivo') }
+  catch(e){ prompt('Copiá este link y abrilo en el otro dispositivo:', linkDeConfig()) }
 };
 document.getElementById('sBajar').onclick = ()=>{ modalSync.hidden = true; bajarSiHayNuevo({forzar:true}) };
 document.getElementById('sSubir').onclick = async ()=>{
@@ -1904,6 +1940,9 @@ document.getElementById('cReset').onclick = ()=>{
 /* ---------- init ---------- */
 cargar();
 pintar();
+leerConfigNube();
+if(nubeActiva()) primerEnlace = false;                 // este dispositivo ya estaba enlazado
+if(configDesdeLink()){ primerEnlace = true; aviso('Sincronización configurada') }
 iniciarNube();
 </script>
 </body>

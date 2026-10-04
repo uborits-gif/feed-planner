@@ -86,6 +86,10 @@ en la compu y en el teléfono. Sin conectar, funciona igual pero cada dispositiv
 3. En **Project Settings → API**, copiar **Project URL** y la clave **anon public**.
 
 **En cada dispositivo:** abrir la app → botón **Local** (arriba a la derecha) → pegar la URL, la clave
+
+Más rápido: con un dispositivo ya conectado, **Local → Copiar link para otro dispositivo** genera un link que
+deja al otro configurado de un toque (la clave viaja en el `#` del link, que no se manda al servidor y se
+borra de la barra apenas se guarda). No lo publiques en ningún lado.
 y el nombre del feed (`dani`, el mismo en todos) → *Conectar*.
 
 Desde ahí: cada cambio se sube solo (1,2 s después de tocar algo), y la app se fija si hay novedades
